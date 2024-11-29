@@ -4,18 +4,17 @@ import {
 } from "discord.js";
 import type { Command } from "$types/command.ts";
 import type { BlueskyDiscordBot } from "../client.ts";
+import type { ProfileViewDetailed } from "@atproto/api";
 
 export class TrackCommand implements Command {
 	data = new SlashCommandBuilder()
 		.setName("track")
 		.setDescription("Track a Bluesky account in this channel.")
-		.addStringOption(
-			(op) =>
-				op
-					.setName("didorhandle")
-					.setDescription("A Decentralized Identifier or Bluesky handle")
-					.setRequired(true),
-			// .setMaxLength(32) DID length is 32
+		.addStringOption((op) =>
+			op
+				.setName("didorhandle")
+				.setDescription("A Decentralized Identifier or Bluesky handle")
+				.setRequired(true),
 		)
 		.addBooleanOption((op) =>
 			op
@@ -69,30 +68,71 @@ export class TrackCommand implements Command {
 				actor: didorhandle,
 			});
 
-			replyMessage += `\n\nFound user...\nHandle: ${data.handle}\nDID: ${data.did}`;
+			const dbResp = botClient.db.sql`
+                SELECT * FROM tracked_accounts WHERE did = ${data.did}
+            `;
 
+			console.log(dbResp);
+
+			if (dbResp.length === 0) {
+				console.log("This account is not already tracked");
+				try {
+					console.log("Adding did to tracked_accounts...");
+					botClient.db.sql`
+		            INSERT INTO tracked_accounts (did) VALUES (${data.did})
+		        `;
+				} catch (error) {
+					if (
+						error instanceof Error &&
+						error.message.includes("UNIQUE constraint failed")
+					) {
+						console.log("There was an error adding DID to database.");
+						return await interaction.reply(
+							"This user is already in the database.",
+						);
+					}
+				}
+			} else {
+				console.log("This account is already tracked");
+			}
+
+			console.log("Checking database for duplicate channel subscription...");
 			try {
-				console.log("Adding did to tracked_accounts...");
-				botClient.db.sql`
-                    INSERT INTO tracked_accounts (did) VALUES (${data.did})
+				const dbResp = botClient.db.sql`
+                    SELECT * FROM channel_subscriptions WHERE did = ${data.did} AND discord_channel_id = ${interaction.channelId}
                 `;
-			} catch (error) {
-				if (
-					error instanceof Error &&
-					error.message.includes("UNIQUE constraint failed")
-				) {
-					console.log("Account was already in tracked_accounts");
+
+				if (dbResp.length === 0) {
+					console.log("Adding channel subscription to database...");
+					try {
+						botClient.db.sql`
+                            INSERT INTO channel_subscriptions (did, discord_channel_id, track_top_level, track_replies, track_reposts)
+                            VALUES (${data.did}, ${interaction.channelId}, ${toplevel ? 1 : 0}, ${replies ? 1 : 0}, ${reposts ? 1 : 0})
+                        `;
+					} catch (_error) {
+						console.log("There was an error adding subscription to database.");
+						return await interaction.reply(
+							"There was an error adding a channel subscription.",
+						);
+					}
+				} else {
+					console.log(
+						"Channel already subscribed to this account... Modifying...",
+					);
 					return await interaction.reply(
-						"This user is already in the database.",
+						"This channel already subscribes to that Bluesky account.\n-# If you think this error is wrong please contact the developer.",
 					);
 				}
+				return await interaction.reply(
+					`Subscription started for ${data.handle}!`,
+				);
+			} catch (error) {
+				console.log(error);
 			}
 		} catch (_error) {
 			return await interaction.reply(
 				"There was an error finding this Bluesky user.\n-# If you think this error is wrong please contact the developer.",
 			);
 		}
-
-		return await interaction.reply(replyMessage);
 	}
 }

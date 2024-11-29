@@ -9,6 +9,7 @@ import { AppBskyFeedPost, AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
+import { isApplicationCommandGuildInteraction } from "../../../AppData/Local/deno/npm/registry.npmjs.org/discord-api-types/0.37.100/utils/v10.d.ts";
 
 type ClientConfig = {
 	bskyService: string;
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 		this.discordClient.once("ready", () => {
 			console.log(`Logged in as ${this.discordClient.user?.tag}`);
 
+			console.log(this.getTrackedAccounts());
 			// Deno.cron("bskyPolling", { minute: { every: 1 } }, () => {});
 		});
 	}
@@ -90,13 +92,20 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 		const trackedAccounts = this.db.sql`
             SELECT did FROM tracked_accounts
         `;
-		console.log(trackedAccounts);
 		return trackedAccounts;
 	}
 
-	// private async pollBlueskyAccounts() {
-	// 	const accounts = this.getTrackedAccounts();
-	// }
+	private async pollBlueskyAccounts() {
+		const accounts = this.getTrackedAccounts();
+
+		for (const account of accounts) {
+			try {
+				const posts = await this.bskyAgent.getAuthorFeed(account.did);
+			} catch (error) {
+				console.log(error);
+			}
+		}
+	}
 
 	private async sendDiscordNotification(
 		post: AppBskyFeedDefs.PostView,
