@@ -9,7 +9,7 @@ import { AppBskyFeedPost, AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
-import { isApplicationCommandGuildInteraction } from "../../../AppData/Local/deno/npm/registry.npmjs.org/discord-api-types/0.37.100/utils/v10.d.ts";
+import type { TrackedAccounts } from "$types/database.ts";
 
 type ClientConfig = {
 	bskyService: string;
@@ -84,28 +84,49 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 			console.log(`Logged in as ${this.discordClient.user?.tag}`);
 
 			console.log(this.getTrackedAccounts());
+			this.pollBlueskyAccounts();
 			// Deno.cron("bskyPolling", { minute: { every: 1 } }, () => {});
 		});
 	}
 
-	private getTrackedAccounts() {
+	private getTrackedAccounts(): Omit<TrackedAccounts, "last_checked_at">[] {
 		const trackedAccounts = this.db.sql`
             SELECT did FROM tracked_accounts
-        `;
+        ` as Omit<TrackedAccounts, "last_checked_at">[];
 		return trackedAccounts;
 	}
 
 	private async pollBlueskyAccounts() {
 		const accounts = this.getTrackedAccounts();
+		console.log(accounts);
 
 		for (const account of accounts) {
 			try {
-				const posts = await this.bskyAgent.getAuthorFeed(account.did);
+				const posts = await this.bskyAgent.getAuthorFeed({
+					actor: account.did,
+					limit: 5,
+				});
+
+				console.log(posts);
+
+				this.updateLastChecked(account);
+
+				// this.processAndNotifyPost(posts);
 			} catch (error) {
-				console.log(error);
+				console.log(`Error polling account ${account.did}:`, error);
 			}
 		}
 	}
+
+	private updateLastChecked(account: { did: string }) {
+		const date = new Date();
+		const sqliteDate = date.toISOString();
+		this.db.sql`
+            UPDATE tracked_accounts SET last_checked_at = ${sqliteDate} WHERE did = ${account.did} 
+        `;
+	}
+
+	private async processAndNotifyPosts(posts: Response) {}
 
 	private async sendDiscordNotification(
 		post: AppBskyFeedDefs.PostView,

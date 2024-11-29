@@ -4,7 +4,6 @@ import {
 } from "discord.js";
 import type { Command } from "$types/command.ts";
 import type { BlueskyDiscordBot } from "../client.ts";
-import type { ProfileViewDetailed } from "@atproto/api";
 
 export class TrackCommand implements Command {
 	data = new SlashCommandBuilder()
