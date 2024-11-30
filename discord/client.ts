@@ -83,9 +83,10 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 		this.discordClient.once("ready", () => {
 			console.log(`Logged in as ${this.discordClient.user?.tag}`);
 
-			console.log(this.getTrackedAccounts());
 			this.pollBlueskyAccounts();
-			// Deno.cron("bskyPolling", { minute: { every: 1 } }, () => {});
+			Deno.cron("bskyPolling", { minute: { every: 1 } }, () => {
+				this.pollBlueskyAccounts();
+			});
 		});
 	}
 
@@ -102,31 +103,63 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 
 		for (const account of accounts) {
 			try {
-				const posts = await this.bskyAgent.getAuthorFeed({
+				const { data } = await this.bskyAgent.getAuthorFeed({
 					actor: account.did,
 					limit: 5,
+					filter: "posts_no_replies",
 				});
 
-				console.log(posts);
+				if (data.feed.length > 0) {
+					const firstPost = data.feed[0].post;
+					const indexedAt = new Date(firstPost.indexedAt);
 
-				this.updateLastChecked(account);
+					this.updateLastChecked(account, indexedAt);
 
-				// this.processAndNotifyPost(posts);
+					for (const feedItem of data.feed) {
+						this.processAndNotifyPost(feedItem);
+					}
+				} else {
+					console.log(`Data feed for ${account.did} less than 0.`);
+				}
 			} catch (error) {
 				console.log(`Error polling account ${account.did}:`, error);
 			}
 		}
 	}
 
-	private updateLastChecked(account: { did: string }) {
-		const date = new Date();
-		const sqliteDate = date.toISOString();
+	private processAndNotifyPost(feedItem: AppBskyFeedDefs.FeedViewPost) {
+		let authorOrReposter: string;
+		let postType: "top_level" | "reply" | "repost";
+		if (feedItem.reason?.$type === "app.bsky.feed.defs#reasonRepost") {
+			authorOrReposter = feedItem.reason.by.did as string;
+			postType = "repost";
+		} else {
+			authorOrReposter = feedItem.post.author.did;
+			postType = feedItem.reply ? "reply" : "top_level";
+		}
+		try {
+			const dbResp = this.db.sql`
+                SELECT * FROM processed_posts WHERE post_uri = ${feedItem.post.uri}
+            `;
+			if (dbResp.length === 0) {
+				const _dbResp = this.db.sql`
+                    INSERT INTO processed_posts (post_uri, did, post_type) VALUES 
+                    (${feedItem.post.uri}, ${authorOrReposter}, ${postType})
+                `;
+				this.sendDiscordNotification(feedItem.post);
+				// TODO: add culling of oldest posts over 100
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}
+
+	private updateLastChecked(account: { did: string }, time: Date) {
+		const sqliteDate = time.toISOString();
 		this.db.sql`
             UPDATE tracked_accounts SET last_checked_at = ${sqliteDate} WHERE did = ${account.did} 
         `;
 	}
-
-	private async processAndNotifyPosts(posts: Response) {}
 
 	private async sendDiscordNotification(
 		post: AppBskyFeedDefs.PostView,
