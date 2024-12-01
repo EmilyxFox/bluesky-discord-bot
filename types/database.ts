@@ -1,9 +1,9 @@
-export type TrackedAccounts = {
+export type TrackedAccount = {
 	did: string;
 	last_checked_at: string;
 };
 
-export type ChannelSubscriptions = {
+export type ChannelSubscription = {
 	did: string;
 	discord_channel_id: string;
 	track_top_level: number;
@@ -11,7 +11,7 @@ export type ChannelSubscriptions = {
 	track_reposts: number;
 };
 
-export type ProcessedPosts = {
+export type ProcessedPost = {
 	post_uri: string;
 	did: string;
 	post_type: string;

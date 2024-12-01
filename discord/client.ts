@@ -9,7 +9,7 @@ import { AppBskyFeedPost, AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
-import type { TrackedAccounts } from "$types/database.ts";
+import type { ChannelSubscription, TrackedAccount } from "$types/database.ts";
 
 type ClientConfig = {
 	bskyService: string;
@@ -90,16 +90,15 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 		});
 	}
 
-	private getTrackedAccounts(): Omit<TrackedAccounts, "last_checked_at">[] {
+	private getTrackedAccounts(): Omit<TrackedAccount, "last_checked_at">[] {
 		const trackedAccounts = this.db.sql`
             SELECT did FROM tracked_accounts
-        ` as Omit<TrackedAccounts, "last_checked_at">[];
+        ` as Omit<TrackedAccount, "last_checked_at">[];
 		return trackedAccounts;
 	}
 
 	private async pollBlueskyAccounts() {
 		const accounts = this.getTrackedAccounts();
-		console.log(accounts);
 
 		for (const account of accounts) {
 			try {
@@ -131,7 +130,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 		let authorOrReposter: string;
 		let postType: "top_level" | "reply" | "repost";
 		if (feedItem.reason?.$type === "app.bsky.feed.defs#reasonRepost") {
-			authorOrReposter = feedItem.reason.by.did as string;
+			authorOrReposter = feedItem.reason.by.did;
 			postType = "repost";
 		} else {
 			authorOrReposter = feedItem.post.author.did;
@@ -146,7 +145,8 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
                     INSERT INTO processed_posts (post_uri, did, post_type) VALUES 
                     (${feedItem.post.uri}, ${authorOrReposter}, ${postType})
                 `;
-				this.sendDiscordNotification(feedItem.post);
+				// this.sendDiscordNotification(feedItem.post);
+				this.sendDiscordMessage(feedItem, authorOrReposter, postType);
 				// TODO: add culling of oldest posts over 100
 			}
 		} catch (error) {
@@ -161,43 +161,103 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
         `;
 	}
 
-	private async sendDiscordNotification(
-		post: AppBskyFeedDefs.PostView,
+	private async sendDiscordMessage(
+		feedItem: AppBskyFeedDefs.FeedViewPost,
+		actor: string,
+		postType: "top_level" | "reply" | "repost",
 	): Promise<void> {
 		try {
-			const channelId = this.config.channelId;
-			const channel = this.discordClient.channels.cache.get(channelId);
-			if (!channel) {
-				throw new Error("Channel not found");
-			}
-			if (!channel.isTextBased()) {
-				throw new Error("Channel is not text based");
-			}
+			const postTypeToColumnMap = {
+				top_level: "track_top_level",
+				reply: "track_replies",
+				repost: "track_reposts",
+			};
 
-			if (!AppBskyFeedPost.isRecord(post.record)) {
-				throw new Error("Post is not record");
-			}
-			const postText = processPostText(post);
+			const trackColumn = postTypeToColumnMap[postType];
 
-			const postLink = getBlueskyPostLink(post);
+			// Explicit query with more detailed logging
+			const rawQuery = `
+                SELECT * FROM channel_subscriptions
+                WHERE did = ? AND ${trackColumn} = 1
+            `;
 
-			const embed = new EmbedBuilder()
-				.setColor("#1da1f2")
-				.setAuthor({
-					name: post.author.displayName || post.author.handle,
-					iconURL: post.author.avatar,
-				})
-				.setDescription(`${postText}\n\n[Open on bksy.app](${postLink})`)
-				.setTimestamp(new Date(post.indexedAt))
-				.setFooter({
-					text: "New Bluesky Post",
+			const subscribedChannels = this.db
+				.prepare(rawQuery)
+				.all(actor) as ChannelSubscription[];
+
+			for (const subscribedChannel of subscribedChannels) {
+				const channel = await this.discordClient.channels.fetch(
+					subscribedChannel.discord_channel_id,
+				);
+				if (!channel) {
+					throw new Error("Channel not found");
+				}
+				if (!channel.isTextBased()) {
+					throw new Error("Channel is not text based");
+				}
+				if (!channel.isSendable()) {
+					throw new Error("Channel is not sendable");
+				}
+
+				const postText = processPostText(feedItem.post);
+
+				const postLink = getBlueskyPostLink(feedItem.post);
+
+				const embed = new EmbedBuilder()
+					.setColor("#1da1f2")
+					.setTimestamp(new Date(feedItem.post.indexedAt))
+					.setDescription(`${postText}\n\n[Open on bksy.app](${postLink})`);
+				switch (postType) {
+					case "top_level":
+						embed
+							.setAuthor({
+								name:
+									feedItem.post.author.displayName ||
+									feedItem.post.author.handle,
+								iconURL: feedItem.post.author.avatar,
+							})
+							.setFooter({
+								text: "Post",
+							});
+						break;
+					case "reply":
+						embed
+							.setAuthor({
+								name:
+									feedItem.post.author.displayName ||
+									feedItem.post.author.handle,
+								iconURL: feedItem.post.author.avatar,
+							})
+							.setFooter({
+								text: "Reply",
+							});
+						break;
+					case "repost":
+						embed
+							.setTitle(
+								feedItem.post.author.displayName || feedItem.post.author.handle,
+							)
+							.setAuthor({
+								name:
+									feedItem.reason?.by.displayName || feedItem.reason?.by.handle,
+								iconURL: feedItem.reason?.by.avatar,
+							})
+							.setFooter({
+								text: "Repost",
+							});
+						break;
+					default:
+						break;
+				}
+				await channel.send({
+					body: {
+						content: "test",
+					},
+					embeds: [embed],
 				});
-
-			if (channel.isSendable()) {
-				await channel.send({ embeds: [embed] });
 			}
 		} catch (error) {
-			console.error("Error sending Discord notification:", error);
+			console.log("Error:", error);
 		}
 	}
 }
