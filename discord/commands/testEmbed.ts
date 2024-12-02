@@ -19,8 +19,7 @@ export class TestEmbedCommand implements Command {
 			.setColor("#1da1f2")
 			.setTimestamp(new Date())
 			.setDescription(`
-                # The Kyiv Independent
-                -# @kyivindependent.com
+                ### [The Kyiv Independent](https://example.com/)
                 ⚡️Russia loses almost 46,000 troops, over $3 billion worth of military equipment in November, Defense Ministry says.
 
 In the previous month, the Russian military lost 2,030 soldiers in one day, which is the highest rate of Russian losses in a day since Feb. 24, 2022.`)

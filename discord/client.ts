@@ -239,30 +239,29 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 								text: "Reply",
 							});
 						break;
-					case "repost":
+					case "repost": {
+						let title = "### ";
+						title += `${feedItem.post.author.displayName ? `${feedItem.post.author.displayName} (@${feedItem.post.author.handle})` : `@${feedItem.post.author.handle}`}`;
+						title += "\n";
 						embed
-							.setTitle(
-								feedItem.post.author.displayName || feedItem.post.author.handle,
-							)
 							.setAuthor({
 								name:
 									feedItem.reason?.by.displayName || feedItem.reason?.by.handle,
 								iconURL: feedItem.reason?.by.avatar,
 								url: `https://bsky.app/profile/${feedItem.reason?.by.did}`,
 							})
+							.setDescription(
+								`${title}${postText}\n\n[Open on bksy.app](${postLink})`,
+							)
 							.setFooter({
 								text: "Repost",
 							});
 						break;
+					}
 					default:
 						break;
 				}
-				await channel.send({
-					body: {
-						content: "test",
-					},
-					embeds: [embed],
-				});
+				await channel.send({ embeds: [embed] });
 			}
 		} catch (error) {
 			console.log("Error:", error);
