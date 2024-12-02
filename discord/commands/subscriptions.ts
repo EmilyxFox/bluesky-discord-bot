@@ -26,7 +26,7 @@ export class SubscriptionsCommand implements Command {
 			const { data: profile } = await botClient.bskyAgent.getProfile({
 				actor: subscription.did,
 			});
-			replyMessage += `${profile.handle}\n`;
+			replyMessage += `@${profile.handle}\n`;
 		}
 
 		return await interaction.reply(replyMessage);
