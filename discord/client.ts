@@ -5,7 +5,7 @@ import {
 	Events,
 	GatewayIntentBits,
 } from "discord.js";
-import { AppBskyFeedPost, AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
+import { AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
@@ -15,7 +15,6 @@ type ClientConfig = {
 	bskyService: string;
 	discordToken: string;
 	trackedUser: string;
-	channelId: string;
 };
 
 export class BlueskyDiscordBot {
@@ -207,6 +206,12 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 					.setColor("#1da1f2")
 					.setTimestamp(new Date(feedItem.post.indexedAt))
 					.setDescription(`${postText}\n\n[Open on bksy.app](${postLink})`);
+				if (
+					feedItem.post.embed?.$type === "app.bsky.embed.images#view" &&
+					feedItem.post.embed.images
+				) {
+					embed.setImage(feedItem.post.embed.images[0].fullsize);
+				}
 				switch (postType) {
 					case "top_level":
 						embed
@@ -215,6 +220,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 									feedItem.post.author.displayName ||
 									feedItem.post.author.handle,
 								iconURL: feedItem.post.author.avatar,
+								url: `https://bsky.app/profile/${feedItem.post.author.did}`,
 							})
 							.setFooter({
 								text: "Post",
@@ -227,6 +233,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 									feedItem.post.author.displayName ||
 									feedItem.post.author.handle,
 								iconURL: feedItem.post.author.avatar,
+								url: `https://bsky.app/profile/${feedItem.post.author.did}`,
 							})
 							.setFooter({
 								text: "Reply",
@@ -241,6 +248,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
 								name:
 									feedItem.reason?.by.displayName || feedItem.reason?.by.handle,
 								iconURL: feedItem.reason?.by.avatar,
+								url: `https://bsky.app/profile/${feedItem.reason?.by.did}`,
 							})
 							.setFooter({
 								text: "Repost",
