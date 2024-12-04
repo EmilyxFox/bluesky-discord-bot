@@ -14,7 +14,6 @@ import type { ChannelSubscription, TrackedAccount } from "$types/database.ts";
 type ClientConfig = {
 	bskyService: string;
 	discordToken: string;
-	trackedUser: string;
 };
 
 export class BlueskyDiscordBot {
