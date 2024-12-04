@@ -13,7 +13,7 @@ export class TestEmbedCommand implements Command {
 
 	async run(
 		interaction: ChatInputCommandInteraction,
-		botClient: BlueskyDiscordBot,
+		_botClient: BlueskyDiscordBot,
 	): Promise<unknown> {
 		const embed = new EmbedBuilder()
 			.setColor("#1da1f2")

@@ -9,7 +9,6 @@ export class CommandHandler {
 	private commands: Command[];
 	private discordREST: REST;
 	private clientId: string;
-	private guildId: string;
 
 	constructor(token: string) {
 		if (!token)
@@ -23,10 +22,8 @@ export class CommandHandler {
 		this.discordREST = new REST().setToken(token);
 
 		const clientId = Deno.env.get("CLIENT_ID");
-		const guildId = Deno.env.get("GUILD_ID");
-		if (guildId && clientId) {
+		if (clientId) {
 			this.clientId = clientId;
-			this.guildId = guildId;
 		} else {
 			throw new Error("Invalid client or guild ID");
 		}
