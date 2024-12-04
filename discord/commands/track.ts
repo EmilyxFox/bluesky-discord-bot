@@ -71,8 +71,6 @@ export class TrackCommand implements Command {
                 SELECT * FROM tracked_accounts WHERE did = ${data.did}
             `;
 
-			console.log(dbResp);
-
 			if (dbResp.length === 0) {
 				console.log("This account is not already tracked");
 				try {
