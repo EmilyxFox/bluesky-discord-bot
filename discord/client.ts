@@ -52,7 +52,7 @@ export class BlueskyDiscordBot {
 
 	private initialiseDatabase(): void {
 		this.db.exec(`
-CREATE TABLE IF NOT EXISTS tracked_accounts (
+            CREATE TABLE IF NOT EXISTS tracked_accounts (
                 did TEXT PRIMARY KEY,
                 last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
@@ -71,8 +71,7 @@ CREATE TABLE IF NOT EXISTS tracked_accounts (
                 post_uri TEXT PRIMARY KEY,
                 did TEXT,
                 post_type TEXT NOT NULL,
-                processed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (did) REFERENCES tracked_accounts(did)
+                processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             `);
 	}
