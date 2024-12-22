@@ -4,8 +4,11 @@ console.log("Caching sqlite lib...");
 
 const db = new Database("./database/store.db");
 
-// biome-ignore lint/style/noNonNullAssertion: <explanation>
-const [version] = db.prepare("SELECT sqlite_version()").value<[string]>()!;
+const rows = db.prepare("SELECT sqlite_version()").value<[string]>();
+
+if (!rows) throw new Error("Blank version row...");
+
+const version = rows[0];
 
 console.log(`sqlite version: ${version}`);
 
