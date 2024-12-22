@@ -9,7 +9,11 @@ import { AppBskyFeedDefs, AtpAgent } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
-import type { ChannelSubscription, TrackedAccount } from "$types/database.ts";
+import type {
+	ChannelSubscription,
+	ProcessedPost,
+	TrackedAccount,
+} from "$types/database.ts";
 
 type ClientConfig = {
 	bskyService: string;
@@ -88,9 +92,11 @@ export class BlueskyDiscordBot {
 	}
 
 	private getTrackedAccounts(): Omit<TrackedAccount, "last_checked_at">[] {
-		const trackedAccounts = this.db.sql`
+		const trackedAccounts = this.db.sql<
+			Omit<TrackedAccount, "last_checked_at">
+		>`
             SELECT did FROM tracked_accounts
-        ` as Omit<TrackedAccount, "last_checked_at">[];
+        `;
 		return trackedAccounts;
 	}
 
@@ -134,17 +140,16 @@ export class BlueskyDiscordBot {
 			postType = feedItem.reply ? "reply" : "top_level";
 		}
 		try {
-			const dbResp = this.db.sql`
+			const dbResp = this.db.sql<ProcessedPost>`
                 SELECT * FROM processed_posts WHERE post_uri = ${feedItem.post.uri}
             `;
 			if (dbResp.length === 0) {
-				const _dbResp = this.db.sql`
+				this.db.sql`
                     INSERT INTO processed_posts (post_uri, did, post_type) VALUES 
                     (${feedItem.post.uri}, ${authorOrReposter}, ${postType})
                 `;
-				// this.sendDiscordNotification(feedItem.post);
-				this.sendDiscordMessage(feedItem, authorOrReposter, postType);
 				// TODO: add culling of oldest posts over 100
+				this.sendDiscordMessage(feedItem, authorOrReposter, postType);
 			}
 		} catch (error) {
 			console.log(error);
@@ -172,7 +177,6 @@ export class BlueskyDiscordBot {
 
 			const trackColumn = postTypeToColumnMap[postType];
 
-			// Explicit query with more detailed logging
 			const rawQuery = `
                 SELECT * FROM channel_subscriptions
                 WHERE did = ? AND ${trackColumn} = 1
