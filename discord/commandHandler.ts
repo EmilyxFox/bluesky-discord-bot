@@ -35,9 +35,12 @@ export class CommandHandler {
 				body: commands,
 			})
 			.then((data) => {
-				console.log(
-					`Successfully registered ${data.length} global application commands`,
-				);
+				// Don't really know if this is a good way to do it :)
+				if (Array.isArray(data)) {
+					console.log(
+						`Successfully registered ${data.length} global application commands`,
+					);
+				}
 			})
 			.catch((err) => {
 				console.error("Error registering application (/) commands", err);
