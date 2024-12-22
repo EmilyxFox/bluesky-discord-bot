@@ -5,7 +5,7 @@ import {
 	Events,
 	GatewayIntentBits,
 } from "discord.js";
-import { AtpAgent, type AppBskyFeedDefs } from "@atproto/api";
+import { AppBskyFeedDefs, AtpAgent } from "@atproto/api";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
@@ -126,7 +126,7 @@ export class BlueskyDiscordBot {
 	private processAndNotifyPost(feedItem: AppBskyFeedDefs.FeedViewPost) {
 		let authorOrReposter: string;
 		let postType: "top_level" | "reply" | "repost";
-		if (feedItem.reason?.$type === "app.bsky.feed.defs#reasonRepost") {
+		if (AppBskyFeedDefs.isReasonRepost(feedItem.reason)) {
 			authorOrReposter = feedItem.reason.by.did;
 			postType = "repost";
 		} else {
@@ -180,7 +180,7 @@ export class BlueskyDiscordBot {
 
 			const subscribedChannels = this.db
 				.prepare(rawQuery)
-				.all(actor) as ChannelSubscription[];
+				.all<ChannelSubscription>(actor);
 
 			for (const subscribedChannel of subscribedChannels) {
 				const channel = await this.discordClient.channels.fetch(
@@ -238,22 +238,29 @@ export class BlueskyDiscordBot {
 							});
 						break;
 					case "repost": {
-						let title = "### ";
-						title += `${feedItem.post.author.displayName ? `${feedItem.post.author.displayName} (@${feedItem.post.author.handle})` : `@${feedItem.post.author.handle}`}`;
-						title += "\n";
-						embed
-							.setAuthor({
-								name:
-									feedItem.reason?.by.displayName || feedItem.reason?.by.handle,
-								iconURL: feedItem.reason?.by.avatar,
-								url: `https://bsky.app/profile/${feedItem.reason?.by.did}`,
-							})
-							.setDescription(
-								`${title}${postText}\n\n[Open on bksy.app](${postLink})`,
-							)
-							.setFooter({
-								text: "Repost",
-							});
+						if (AppBskyFeedDefs.isReasonRepost(feedItem.reason)) {
+							let title = "### ";
+							title += `${feedItem.post.author.displayName ? `${feedItem.post.author.displayName} (@${feedItem.post.author.handle})` : `@${feedItem.post.author.handle}`}`;
+							title += "\n";
+							embed
+								.setAuthor({
+									name:
+										feedItem.reason?.by.displayName ||
+										feedItem.reason?.by.handle,
+									iconURL: feedItem.reason?.by.avatar,
+									url: `https://bsky.app/profile/${feedItem.reason?.by.did}`,
+								})
+								.setDescription(
+									`${title}${postText}\n\n[Open on bksy.app](${postLink})`,
+								)
+								.setFooter({
+									text: "Repost",
+								});
+						} else {
+							throw new Error(
+								"Attempted to send a repost message without valid repost reason.",
+							);
+						}
 						break;
 					}
 					default:
