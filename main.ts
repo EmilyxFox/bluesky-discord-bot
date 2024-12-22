@@ -7,8 +7,7 @@ if (!token) {
 }
 const bot = new BlueskyDiscordBot({
 	bskyService: "https://public.api.bsky.app/xrpc",
-	// biome-ignore lint/style/noNonNullAssertion: <explanation>
-	discordToken: Deno.env.get("DISCORD_TOKEN")!,
+	discordToken: token,
 });
 
 bot.initialise();
