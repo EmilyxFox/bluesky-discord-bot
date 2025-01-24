@@ -2,6 +2,7 @@ import type { Command } from "$types/command.ts";
 import {
 	type ChatInputCommandInteraction,
 	EmbedBuilder,
+	InteractionContextType,
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
@@ -13,6 +14,7 @@ export class SubscriptionsCommand implements Command {
 	data = new SlashCommandBuilder()
 		.setName("subscriptions")
 		.setDescription("Inspect and manage subscriptions in the current chanenl.")
+        .setContexts(InteractionContextType.Guild)
 		.addSubcommand((sub) =>
 			sub
 				.setName("list")
