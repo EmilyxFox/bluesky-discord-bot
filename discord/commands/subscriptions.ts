@@ -4,6 +4,7 @@ import {
 	EmbedBuilder,
 	InteractionContextType,
 	MessageFlags,
+	PermissionFlagsBits,
 	SlashCommandBuilder,
 } from "discord.js";
 import type { BlueskyDiscordBot } from "../client.ts";
@@ -15,6 +16,7 @@ export class SubscriptionsCommand implements Command {
 		.setName("subscriptions")
 		.setDescription("Inspect and manage subscriptions in the current chanenl.")
         .setContexts(InteractionContextType.Guild)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
 		.addSubcommand((sub) =>
 			sub
 				.setName("list")
