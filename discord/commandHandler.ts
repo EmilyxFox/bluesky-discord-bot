@@ -2,7 +2,6 @@ import type { Command } from "$types/command.ts";
 import { type ChatInputCommandInteraction, REST, Routes } from "discord.js";
 import type { BlueskyDiscordBot } from "./client.ts";
 import { SubscriptionsCommand } from "./commands/subscriptions.ts";
-import { TestEmbedCommand } from "./commands/testEmbed.ts";
 
 export class CommandHandler {
 	private commands: Command[];
@@ -13,7 +12,7 @@ export class CommandHandler {
 		if (!token)
 			throw new Error("Invalid Discord token when registering commands");
 
-		this.commands = [new SubscriptionsCommand(), new TestEmbedCommand()];
+		this.commands = [new SubscriptionsCommand()];
 		this.discordREST = new REST().setToken(token);
 
 		const clientId = Deno.env.get("CLIENT_ID");
