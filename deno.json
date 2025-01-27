@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts",
+    "dev": "deno run --env-file --A --unstable-cron --watch main.ts",
     "cacheDb": "deno run --allow-env=\"DENO_SQLITE_PATH,DENO_SQLITE_LOCAL,DENO_DIR,LOCALAPPDATA\" --allow-read=\"/deno-dir/plug\" --allow-write=\"/deno-dir/plug\" --allow-net=\"github.com:443,objects.githubusercontent.com:443\" --allow-ffi cache-sqlitelib.ts"
   },
   "imports": {
