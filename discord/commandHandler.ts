@@ -2,6 +2,7 @@ import type { Command } from "$types/command.ts";
 import { type ChatInputCommandInteraction, REST, Routes } from "discord.js";
 import type { BlueskyDiscordBot } from "./client.ts";
 import { SubscriptionsCommand } from "./commands/subscriptions.ts";
+import { env } from "../utils/env.ts";
 
 export class CommandHandler {
 	private commands: Command[];
@@ -15,7 +16,7 @@ export class CommandHandler {
 		this.commands = [new SubscriptionsCommand()];
 		this.discordREST = new REST().setToken(token);
 
-		const clientId = Deno.env.get("CLIENT_ID");
+		const clientId = env.CLIENT_ID;
 		if (clientId) {
 			this.clientId = clientId;
 		} else {
