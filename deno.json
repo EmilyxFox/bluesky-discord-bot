@@ -11,5 +11,10 @@
     "discord.js": "npm:discord.js@^14.16.3",
     "$types/": "./types/",
     "zod": "npm:zod@^3.24.1"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 160,
+    "indentWidth": 2
   }
 }
