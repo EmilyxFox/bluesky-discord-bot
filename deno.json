@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts",
+    "dev": "deno run --env-file --A --unstable-cron --watch main.ts",
     "cacheDb": "deno run --allow-env=\"DENO_SQLITE_PATH,DENO_SQLITE_LOCAL,DENO_DIR,LOCALAPPDATA\" --allow-read=\"/deno-dir/plug\" --allow-write=\"/deno-dir/plug\" --allow-net=\"github.com:443,objects.githubusercontent.com:443\" --allow-ffi cache-sqlitelib.ts"
   },
   "imports": {
@@ -9,6 +9,12 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/path": "jsr:@std/path@^1.0.8",
     "discord.js": "npm:discord.js@^14.16.3",
-    "$types/": "./types/"
+    "$types/": "./types/",
+    "zod": "npm:zod@^3.24.1"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 160,
+    "indentWidth": 2
   }
 }
