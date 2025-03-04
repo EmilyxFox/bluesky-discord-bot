@@ -64,7 +64,7 @@ export class CommandHandler {
       .run(interaction, botClient)
       .then(() => {
         console.log(
-          `Sucesfully executed command [/${interaction.commandName} ${interaction.options.getSubcommand()}]`,
+          `Successfully executed command [/${interaction.commandName} ${interaction.options.getSubcommand()}]`,
           {
             guild: { id: interaction.guildId },
             user: { name: interaction.user.globalName },
