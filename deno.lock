@@ -1,5 +1,5 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
     "jsr:@db/sqlite@0.12": "0.12.0",
     "jsr:@denosaurs/plug@1": "1.0.6",
@@ -14,6 +14,7 @@
     "jsr:@std/path@0.221": "0.221.0",
     "jsr:@std/path@^1.0.8": "1.0.8",
     "npm:@atproto/api@~0.13.18": "0.13.18",
+    "npm:@atproto/xrpc@~0.7.7": "0.7.7",
     "npm:@types/node@*": "22.5.4",
     "npm:discord.js@^14.16.3": "14.16.3",
     "npm:zod@*": "3.24.1",
@@ -84,10 +85,10 @@
     "@atproto/api@0.13.18": {
       "integrity": "sha512-rrl5HhzGYWZ7fiC965TPBUOVItq9M4dxMb6qz8IvAVQliSkrJrKc7UD0QWL89QiiXaOBuX8w+4i5r4wrfBGddg==",
       "dependencies": [
-        "@atproto/common-web",
-        "@atproto/lexicon",
-        "@atproto/syntax",
-        "@atproto/xrpc",
+        "@atproto/common-web@0.3.1",
+        "@atproto/lexicon@0.4.3",
+        "@atproto/syntax@0.3.1",
+        "@atproto/xrpc@0.6.4",
         "await-lock",
         "multiformats",
         "tlds",
@@ -103,24 +104,69 @@
         "zod@3.23.8"
       ]
     },
+    "@atproto/common-web@0.4.7": {
+      "integrity": "sha512-vjw2+81KPo2/SAbbARGn64Ln+6JTI0FTI4xk8if0ebBfDxFRmHb2oSN1y77hzNq/ybGHqA2mecfhS03pxC5+lg==",
+      "dependencies": [
+        "@atproto/lex-data",
+        "@atproto/lex-json",
+        "zod@3.24.1"
+      ]
+    },
+    "@atproto/lex-data@0.0.3": {
+      "integrity": "sha512-ivo1IpY/EX+RIpxPgCf4cPhQo5bfu4nrpa1vJCt8hCm9SfoonJkDFGa0n4SMw4JnXZoUcGcrJ46L+D8bH6GI2g==",
+      "dependencies": [
+        "@atproto/syntax@0.4.2",
+        "multiformats",
+        "tslib",
+        "uint8arrays",
+        "unicode-segmenter"
+      ]
+    },
+    "@atproto/lex-json@0.0.3": {
+      "integrity": "sha512-ZVcY7XlRfdPYvQQ2WroKUepee0+NCovrSXgXURM3Xv+n5jflJCoczguROeRr8sN0xvT0ZbzMrDNHCUYKNnxcjw==",
+      "dependencies": [
+        "@atproto/lex-data",
+        "tslib"
+      ]
+    },
     "@atproto/lexicon@0.4.3": {
       "integrity": "sha512-lFVZXe1S1pJP0dcxvJuHP3r/a+EAIBwwU7jUK+r8iLhIja+ml6NmYv8KeFHmIJATh03spEQ9s02duDmFVdCoXg==",
       "dependencies": [
-        "@atproto/common-web",
-        "@atproto/syntax",
+        "@atproto/common-web@0.3.1",
+        "@atproto/syntax@0.3.1",
         "iso-datestring-validator",
         "multiformats",
         "zod@3.23.8"
       ]
     },
+    "@atproto/lexicon@0.6.0": {
+      "integrity": "sha512-5veb8aD+J5M0qszLJ+73KSFsFrJBgAY/nM1TSAJvGY7fNc9ZAT+PSUlmIyrdye9YznAZ07yktalls/TwNV7cHQ==",
+      "dependencies": [
+        "@atproto/common-web@0.4.7",
+        "@atproto/syntax@0.4.2",
+        "iso-datestring-validator",
+        "multiformats",
+        "zod@3.24.1"
+      ]
+    },
     "@atproto/syntax@0.3.1": {
       "integrity": "sha512-fzW0Mg1QUOVCWUD3RgEsDt6d1OZ6DdFmbKcDdbzUfh0t4rhtRAC05KbZYmxuMPWDAiJ4BbbQ5dkAc/mNypMXkw=="
+    },
+    "@atproto/syntax@0.4.2": {
+      "integrity": "sha512-X9XSRPinBy/0VQ677j8VXlBsYSsUXaiqxWVpGGxJYsAhugdQRb0jqaVKJFtm6RskeNkV6y9xclSUi9UYG/COrA=="
     },
     "@atproto/xrpc@0.6.4": {
       "integrity": "sha512-9ZAJ8nsXTqC4XFyS0E1Wlg7bAvonhXQNQ3Ocs1L1LIwFLXvsw/4fNpIHXxvXvqTCVeyHLbImOnE9UiO1c/qIYA==",
       "dependencies": [
-        "@atproto/lexicon",
+        "@atproto/lexicon@0.4.3",
         "zod@3.23.8"
+      ]
+    },
+    "@atproto/xrpc@0.7.7": {
+      "integrity": "sha512-K1ZyO/BU8JNtXX5dmPp7b5UrkLMMqpsIa/Lrj5D3Su+j1Xwq1m6QJ2XJ1AgjEjkI1v4Muzm7klianLE6XGxtmA==",
+      "dependencies": [
+        "@atproto/lexicon@0.6.0",
+        "zod@3.24.1"
       ]
     },
     "@discordjs/builders@1.9.0": {
@@ -257,7 +303,8 @@
       "integrity": "sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg=="
     },
     "tlds@1.255.0": {
-      "integrity": "sha512-tcwMRIioTcF/FcxLev8MJWxCp+GUALRhFEqbDoZrnowmKSGqPrl5pqS+Sut2m8BgJ6S4FExCSSpGffZ0Tks6Aw=="
+      "integrity": "sha512-tcwMRIioTcF/FcxLev8MJWxCp+GUALRhFEqbDoZrnowmKSGqPrl5pqS+Sut2m8BgJ6S4FExCSSpGffZ0Tks6Aw==",
+      "bin": true
     },
     "ts-mixer@6.0.4": {
       "integrity": "sha512-ufKpbmrugz5Aou4wcr5Wc1UUFWOLhq+Fm6qa6P0w0K5Qw2yhaUoiWszhCVuNQyNwrlGiscHOmqYoAox1PtvgjA=="
@@ -277,6 +324,9 @@
     "undici@6.19.8": {
       "integrity": "sha512-U8uCCl2x9TK3WANvmBavymRzxbfFYG+tAu+fgx3zxQy3qdagQqBLwJVrdyO1TBfUXvfKveMKJZhpvUYoOjM+4g=="
     },
+    "unicode-segmenter@0.14.4": {
+      "integrity": "sha512-pR5VCiCrLrKOL6FRW61jnk9+wyMtKKowq+jyFY9oc6uHbWKhDL4yVRiI4YZPksGMK72Pahh8m0cn/0JvbDDyJg=="
+    },
     "ws@8.18.0": {
       "integrity": "sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw=="
     },
@@ -293,6 +343,7 @@
       "jsr:@std/assert@1",
       "jsr:@std/path@^1.0.8",
       "npm:@atproto/api@~0.13.18",
+      "npm:@atproto/xrpc@~0.7.7",
       "npm:discord.js@^14.16.3",
       "npm:zod@^3.24.1"
     ]

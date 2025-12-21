@@ -1,5 +1,6 @@
 import { Client, Collection, EmbedBuilder, Events, GatewayIntentBits } from "discord.js";
 import { AppBskyFeedDefs, AtpAgent } from "@atproto/api";
+import { XRPCError } from "@atproto/xrpc";
 import { Database } from "@db/sqlite";
 import { getBlueskyPostLink, processPostText } from "../bluesky/helpers.ts";
 import { CommandHandler } from "./commandHandler.ts";
@@ -91,6 +92,43 @@ export class BlueskyDiscordBot {
     return trackedAccounts;
   }
 
+  /**
+   * Completely removes a Bluesky account from the database.
+   * Removes all subscriptions across all channels, clears post history,
+   * and stops tracking the account.
+   */
+  forceRemoveAccount(did: string): boolean {
+    try {
+      const transaction = this.db.transaction(() => {
+        const subsStmt = this.db.prepare(`
+                  DELETE FROM channel_subscriptions
+                  WHERE did = ?
+              `);
+        const deletedSubsCount = subsStmt.run(did);
+
+        const postsStmt = this.db.prepare(`
+                  DELETE FROM processed_posts
+                  WHERE did = ?
+              `);
+        postsStmt.run(did);
+
+        const trackStmt = this.db.prepare(`
+                  DELETE FROM tracked_accounts
+                  WHERE did = ?
+              `);
+        trackStmt.run(did);
+
+        console.log(`Force removed account ${did}. Removed ${deletedSubsCount} subscriptions.`);
+      });
+
+      transaction();
+      return true;
+    } catch (error) {
+      console.error(`Error forcing removal of account ${did}:`, error);
+      return false;
+    }
+  }
+
   private async pollBlueskyAccounts() {
     const accounts = this.getTrackedAccounts();
 
@@ -115,6 +153,15 @@ export class BlueskyDiscordBot {
           console.log(`Data feed for ${account.did} less than 0.`);
         }
       } catch (error) {
+        if (error instanceof XRPCError) {
+          if (error.status === 400 && error.message?.includes("Profile not found")) {
+            console.warn(`Profile ${account.did} not found. Purging from database...`);
+
+            this.forceRemoveAccount(account.did);
+
+            return;
+          }
+        }
         console.log(`Error polling account ${account.did}:`, error);
       }
     }
@@ -136,7 +183,7 @@ export class BlueskyDiscordBot {
             `;
       if (dbResp.length === 0) {
         this.db.sql`
-                    INSERT INTO processed_posts (post_uri, did, post_type) VALUES 
+                    INSERT INTO processed_posts (post_uri, did, post_type) VALUES
                     (${feedItem.post.uri}, ${authorOrReposter}, ${postType})
                 `;
         // TODO: add culling of oldest posts over 100
@@ -150,7 +197,7 @@ export class BlueskyDiscordBot {
   private updateLastChecked(account: { did: string }, time: Date) {
     const sqliteDate = time.toISOString();
     this.db.sql`
-            UPDATE tracked_accounts SET last_checked_at = ${sqliteDate} WHERE did = ${account.did} 
+            UPDATE tracked_accounts SET last_checked_at = ${sqliteDate} WHERE did = ${account.did}
         `;
   }
 
