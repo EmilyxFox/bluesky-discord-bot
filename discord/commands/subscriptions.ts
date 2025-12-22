@@ -110,7 +110,7 @@ export class SubscriptionsCommand implements Command {
           replyMessage = subscriptions
             .map((subscription) => {
               const profile = profileMap.get(subscription.did);
-              return profile ? `@${profile.handle}` : null;
+              return profile ? `@${profile.handle}` : `${subscription.did}`;
             })
             .filter(Boolean)
             .join("\n");
